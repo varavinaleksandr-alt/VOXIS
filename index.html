@@ -14,15 +14,21 @@
     <button onclick="check()">ПРОВЕРИТЬ МАЯК</button>
     <div id="out" style="margin-top: 20px;">Ожидание...</div>
 
-    <script>
-        const URL = "https://script.google.com/macros/s/AKfycbwLIQfO9dXRXt4sNkBWv8PXpAYQ5LX_0UuBVXBdkS_u4Ak3lj1sBLXdnT26pMK8oyxJ/exec";
+   <script>
+    // ВСТАВЬ СЮДА СВОЙ URL ИЗ GOOGLE
+    const SERVER_URL = "https://script.google.com/macros/s/AKfycbwLIQfO9dXRXt4sNkBWv8PXpAYQ5LX_0UuBVXBdkS_u4Ak3lj1sBLXdnT26pMK8oyxJ/exec";
 
-        async function check() {
-            document.getElementById('out').innerText = "Связь...";
-            const res = await fetch(URL);
-            const text = await response.text();
-            document.getElementById('out').innerText = text;
+    async function check() {
+        const out = document.getElementById('out');
+        out.innerText = "Подключение...";
+        
+        try {
+            // Мы просто переходим по ссылке и берем текст
+            const res = await fetch(SERVER_URL);
+            const text = await res.text(); 
+            out.innerText = text; // Здесь должен появиться "КОД 777"
+        } catch (err) {
+            out.innerText = "Ошибка узла";
         }
-    </script>
-</body>
-</html>
+    }
+</script>
