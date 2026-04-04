@@ -3,32 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GILDIA</title>
+    <title>GILDIA v0.1</title>
     <style>
         body { background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px; }
-        button { background: #0f0; color: #000; border: none; padding: 20px; font-weight: bold; border-radius: 10px; }
+        button { background: #0f0; color: #000; border: none; padding: 20px; font-weight: bold; border-radius: 10px; cursor: pointer; }
+        #out { margin-top: 30px; font-size: 18px; color: #00ffcc; border-top: 1px solid #333; padding-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>GILDIA v0.1</h1>
+    <h1>GILDIA NODE</h1>
     <button onclick="check()">ПРОВЕРИТЬ МАЯК</button>
-    <div id="out" style="margin-top: 20px;">Ожидание...</div>
+    <div id="out">СТАТУС: ОЖИДАНИЕ</div>
 
-   <script>
-    // ВСТАВЬ СЮДА СВОЙ URL ИЗ GOOGLE
-    const SERVER_URL = "https://script.google.com/macros/s/AKfycbwLIQfO9dXRXt4sNkBWv8PXpAYQ5LX_0UuBVXBdkS_u4Ak3lj1sBLXdnT26pMK8oyxJ/exec";
+    <script>
+        // ВАЖНО: Вставь сюда тот самый URL, который выдал "КОД 777"
+        const SERVER_URL = "https://script.google.com/macros/s/AKfycbwLIQfO9dXRXt4sNkBWv8PXpAYQ5LX_0UuBVXBdkS_u4Ak3lj1sBLXdnT26pMK8oyxJ/exec";
 
-    async function check() {
-        const out = document.getElementById('out');
-        out.innerText = "Подключение...";
-        
-        try {
-            // Мы просто переходим по ссылке и берем текст
-            const res = await fetch(SERVER_URL);
-            const text = await res.text(); 
-            out.innerText = text; // Здесь должен появиться "КОД 777"
-        } catch (err) {
-            out.innerText = "Ошибка узла";
+        async function check() {
+            const out = document.getElementById('out');
+            out.innerText = "СКАНИРОВАНИЕ...";
+            
+            try {
+                // Мы просто идем по ссылке и берем текст
+                const response = await fetch(SERVER_URL);
+                const text = await response.text(); 
+                out.innerText = "ПОЛУЧЕНО: " + text;
+            } catch (err) {
+                out.innerText = "ОШИБКА СВЯЗИ";
+            }
         }
-    }
-</script>
+    </script>
+</body>
+</html>
