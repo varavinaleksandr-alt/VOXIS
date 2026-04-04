@@ -5,66 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GILDIA Mobile</title>
     <style>
-        body { background: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .app-container { width: 100%; max-width: 400px; height: 100%; background: #1a1a1a; border-radius: 0; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
-        .header { border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
-        h1 { color: #00ffcc; font-size: 24px; letter-spacing: 2px; margin: 0; }
-        .status-dot { height: 10px; width: 10px; background-color: #00ffcc; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 10px #00ffcc; }
-        .balance-card { background: #252525; padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #00ffcc; }
-        .label { font-size: 12px; color: #888; text-transform: uppercase; }
-        .value { font-size: 20px; font-weight: bold; margin-top: 5px; }
+        body { background: #0d0d0d; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .app-container { width: 100%; max-width: 400px; height: 100%; background: #141414; display: flex; flex-direction: column; padding: 30px; box-sizing: border-box; border: 1px solid #222; }
+        .header { border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; text-align: left; }
+        h1 { color: #00ffcc; font-size: 26px; letter-spacing: 3px; margin: 0; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        .status { margin-top: 10px; font-size: 11px; color: #00ffcc; letter-spacing: 1px; opacity: 0.8; }
+        .balance-card { background: #1d1d1d; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 22px; font-weight: bold; margin-top: 8px; color: #fff; }
         .screen { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
-        button { background: transparent; border: 1px solid #00ffcc; color: #00ffcc; padding: 18px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
-        button:active { background: rgba(0, 255, 204, 0.1); transform: scale(0.98); }
-        #log { margin-top: 20px; font-size: 13px; color: #666; font-family: monospace; min-height: 40px; }
+        button { background: #00ffcc; border: none; color: #000; padding: 20px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(0,255,204,0.2); }
+        button:active { transform: scale(0.96); opacity: 0.8; }
+        #log { margin-top: 30px; font-size: 14px; color: #888; font-family: monospace; line-height: 1.5; text-align: center; border-top: 1px solid #222; padding-top: 20px; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <div class="header">
-            <h1>GILDIA <span style="font-size: 10px; vertical-align: middle; color: #444;">V0.1 ALPHA</span></h1>
-            <div style="margin-top: 10px; font-size: 12px;"><span class="status-dot"></span> СЕТЬ: ЗАЩИЩЕНА (STEALTH)</div>
+            <h1>GILDIA</h1>
+            <div class="status">● СИСТЕМА АКТИВНА</div>
         </div>
 
         <div class="screen">
             <div class="balance-card">
-                <div class="label">Твой баланс</div>
-                <div class="value">100 GIL</div>
-            </div>
-            <div class="balance-card" style="border-left-color: #555;">
-                <div class="label">Идентификатор (Founders)</div>
-                <div class="value" style="font-size: 16px;">F1_ZARYA</div>
+                <div class="label">Баланс GIL</div>
+                <div class="value">100.00</div>
             </div>
             
             <button onclick="checkBeacon()">Проверить Маяк</button>
-            <div id="log">Система готова. Ожидание команд...</div>
+            <div id="log">Ожидание сигнала...</div>
         </div>
     </div>
 
     <script>
-        // ВСТАВЬ СЮДА СВОЙ URL ИЗ GOOGLE (который заканчивается на /exec)
+        // ВАЖНО: ВСТАВЬ СЮДА СВОЙ URL ИЗ GOOGLE (который заканчивается на /exec)
         const SERVER_URL = "https://script.google.com/macros/s/AKfycbxDhuGuaVKwcr6V4N3Bn3U7VyedFhYbY1UYuNTb2YV4nDrv_Kaa07UvBSkjHd30mCF9/exec";
 
         async function checkBeacon() {
             const logElement = document.getElementById('log');
-            logElement.innerText = "> Подключение к узлу GILDIA...";
+            logElement.style.color = "#888";
+            logElement.innerText = "> Сканирование эфира...";
             
             try {
-                const response = await fetch(SERVER_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Важно для обхода ограничений браузера на MVP
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'check', token: 'F1_ZARYA' })
-                });
+                // Используем метод GET для обхода CORS
+                const response = await fetch(`${SERVER_URL}?action=check&token=F1_ZARYA`);
+                const messageFromServer = await response.text();
                 
-                // На MVP стадии с Google Scripts 'no-cors' не дает прочитать ответ, 
-                // но соединение ПРОВЕРЯЕТСЯ.
                 logElement.style.color = "#00ffcc";
-                logElement.innerText = "> УСПЕХ: Сигнал принят. Обновлений нет.";
+                logElement.innerText = "> ДИРЕКТИВА: " + messageFromServer;
                 
             } catch (err) {
                 logElement.style.color = "#ff4444";
-                logElement.innerText = "> ОШИБКА: Узел заблокирован.";
+                logElement.innerText = "> ОШИБКА: Узел G-Cloud не отвечает.";
             }
         }
     </script>
