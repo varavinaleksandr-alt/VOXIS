@@ -1,63 +1,27 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GILDIA Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GILDIA</title>
     <style>
-        body { background: #0d0d0d; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .app-container { width: 100%; max-width: 400px; height: 100%; background: #141414; display: flex; flex-direction: column; padding: 30px; box-sizing: border-box; border: 1px solid #222; }
-        .header { border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; text-align: left; }
-        h1 { color: #00ffcc; font-size: 26px; letter-spacing: 3px; margin: 0; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
-        .status { margin-top: 10px; font-size: 11px; color: #00ffcc; letter-spacing: 1px; opacity: 0.8; }
-        .balance-card { background: #1d1d1d; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
-        .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .value { font-size: 22px; font-weight: bold; margin-top: 8px; color: #fff; }
-        .screen { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
-        button { background: #00ffcc; border: none; color: #000; padding: 20px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(0,255,204,0.2); }
-        button:active { transform: scale(0.96); opacity: 0.8; }
-        #log { margin-top: 30px; font-size: 14px; color: #888; font-family: monospace; line-height: 1.5; text-align: center; border-top: 1px solid #222; padding-top: 20px; }
+        body { background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px; }
+        button { background: #0f0; color: #000; border: none; padding: 20px; font-weight: bold; border-radius: 10px; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">
-            <h1>GILDIA</h1>
-            <div class="status">● СИСТЕМА АКТИВНА</div>
-        </div>
-
-        <div class="screen">
-            <div class="balance-card">
-                <div class="label">Баланс GIL</div>
-                <div class="value">100.00</div>
-            </div>
-            
-            <button onclick="checkBeacon()">Проверить Маяк</button>
-            <div id="log">Ожидание сигнала...</div>
-        </div>
-    </div>
+    <h1>GILDIA v0.1</h1>
+    <button onclick="check()">ПРОВЕРИТЬ МАЯК</button>
+    <div id="out" style="margin-top: 20px;">Ожидание...</div>
 
     <script>
-        // ВАЖНО: ВСТАВЬ СЮДА СВОЙ URL ИЗ GOOGLE (который заканчивается на /exec)
-        const SERVER_URL = "https://script.google.com/macros/s/AKfycbxDhuGuaVKwcr6V4N3Bn3U7VyedFhYbY1UYuNTb2YV4nDrv_Kaa07UvBSkjHd30mCF9/exec";
+        const URL = "https://script.google.com/macros/s/AKfycbwLIQfO9dXRXt4sNkBWv8PXpAYQ5LX_0UuBVXBdkS_u4Ak3lj1sBLXdnT26pMK8oyxJ/exec";
 
-        async function checkBeacon() {
-            const logElement = document.getElementById('log');
-            logElement.style.color = "#888";
-            logElement.innerText = "> Сканирование эфира...";
-            
-            try {
-                // Используем метод GET для обхода CORS
-                const response = await fetch(`${SERVER_URL}?action=check&token=F1_ZARYA`);
-                const messageFromServer = await response.text();
-                
-                logElement.style.color = "#00ffcc";
-                logElement.innerText = "> ДИРЕКТИВА: " + messageFromServer;
-                
-            } catch (err) {
-                logElement.style.color = "#ff4444";
-                logElement.innerText = "> ОШИБКА: Узел G-Cloud не отвечает.";
-            }
+        async function check() {
+            document.getElementById('out').innerText = "Связь...";
+            const res = await fetch(URL);
+            const text = await response.text();
+            document.getElementById('out').innerText = text;
         }
     </script>
 </body>
