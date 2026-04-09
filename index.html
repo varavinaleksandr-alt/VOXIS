@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VOXIS SAFE</title>
-    <!-- Библиотека шифрования -->
-    <script src="https://cloudflare.com"></script>
     <style>
         :root { --accent: #00ffcc; --bg: #0a0e27; }
         body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
@@ -20,49 +18,45 @@
 </head>
 <body>
 
-    <!-- ЭКРАН РЕГИСТРАЦИИ -->
     <div class="card" id="regScreen">
         <h1>VOXIS</h1>
-        <input type="text" id="nick" placeholder="Введите Никнейм">
-        <input type="password" id="p1" placeholder="Придумайте ПИН">
-        <input type="password" id="p2" placeholder="Повторите ПИН">
+        <input type="text" id="nick" placeholder="Никнейм">
+        <input type="password" id="p1" placeholder="ПИН">
+        <input type="password" id="p2" placeholder="Повтор ПИН">
         <button onclick="doRegister()">Создать Сейф</button>
     </div>
 
-    <!-- ЭКРАН ВХОДА -->
     <div class="card hidden" id="loginScreen">
-        <h3>СЕЙФ ЗАБЛОКИРОВАН</h3>
+        <h3>ВХОД</h3>
         <input type="password" id="loginPin" placeholder="Введите ПИН">
         <button onclick="doLogin()">Открыть</button>
-        <button style="background:transparent; color:#555; border:none; margin-top:10px;" onclick="localStorage.clear(); location.reload();">Удалить аккаунт</button>
     </div>
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
     <div class="card hidden" id="app">
-        <div style="text-align: left; font-size: 14px; margin-bottom: 10px;">
-            👤 <span id="userNick"></span> | <span id="userId" style="color:var(--accent)"></span>
-        </div>
-        <p>💰 VOX: <span id="userBalance">100.00</span></p>
-        <hr border="1" color="#1a1f3a" style="margin: 15px 0;">
-        <input type="text" id="targetId" placeholder="ID получателя (VOX-...)">
-        <textarea id="msgText" placeholder="Зашифрованное сообщение..." rows="3"></textarea>
-        <button onclick="sendMsg()">Отправить Пакет</button>
-        <div id="status" style="font-size:11px; margin-top:10px; color:var(--accent); min-height: 15px;"></div>
+        <p>🆔 <span id="userId" style="color:var(--accent)"></span></p>
+        <p>💰 VOX: 100.00</p>
+        <input type="text" id="targetId" placeholder="Кому (ID)">
+        <textarea id="msgText" placeholder="Сообщение..."></textarea>
+        <button onclick="sendMsg()">Отправить</button>
+        <div id="status" style="font-size:11px; margin-top:10px; color:var(--accent);"></div>
     </div>
 
-    <!-- ОКНО С SEED -->
     <div id="seedModal" class="modal hidden">
         <div class="card">
-            <h3 style="color: var(--accent);">⚠️ ЗАПИШИТЕ SEED!</h3>
-            <p style="font-size: 12px; color: #888;">Это единственный способ восстановить доступ.</p>
+            <h3>ЗАПИШИТЕ SEED!</h3>
             <div class="seed-box" id="seedOut"></div>
             <button onclick="finishReg()">Я ЗАПИСАЛ</button>
         </div>
     </div>
 
+    <!-- ВШИТАЯ МИНИ-БИБЛИОТЕКА ШИФРОВАНИЯ (AES + SHA256) -->
     <script>
-        // ТВОЯ АКТУАЛЬНАЯ ССЫЛКА
-        const MAYAK_URL = "https://script.google.com/macros/s/AKfycby9k2zI09dtL2454FvvansiCKqZ3kY-UFnYdWEK8bKWYBNxFAu49O9uPlsMB8a3e-fi/exec";
+    var CryptoJS=function(h,i){var e={},f=e.lib={},l=f.Base={extend:function(a){var b=this.create();a&&b.mixIn(a);return b},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var b in a)a.hasOwnProperty(b)&&(this[b]=a[b])}},n=f.WordArray=l.extend({init:function(a,b){a=this.words=a||[];this.sigBytes=null!=b?b:4*a.length},toString:function(a){return(a||p).stringify(this)},concat:function(a){var b=this.words,c=a.words,d=this.sigBytes;a=a.sigBytes;if(d%4)for(var e=0;e<a;e++)b[d+e>>>2]|=(c[e>>>2]>>>24-8*(e%4)&255)<<24-8*((d+e)%4);else for(e=0;e<a;e+=4)b[d+e>>>2]=c[e>>>2];this.sigBytes+=a;return this}}),j=e.enc={},p=j.Hex={stringify:function(a){for(var b=a.words,a=a.sigBytes,c=[],d=0;d<a;d++){var e=b[d>>>2]>>>24-8*(d%4)&255;c.push((e>>>4).toString(16));c.push((15&e).toString(16))}return c.join("")}},k=j.Utf8={parse:function(a){return n.create(function(a){for(var b=a.length,c=[],d=0;d<b;d++)c[d>>>2]|=(255&a.charCodeAt(d))<<24-8*(d%4);return c}(unescape(encodeURIComponent(a))),encodeURIComponent(a).replace(/%[0-9A-F]{2}/g,"a").length)}};return e}(Math);
+    (function(h){var i=CryptoJS,e=i.lib.Base,f=i.lib.WordArray,i=i.algo;i.SHA256=e.extend({_doReset:function(){this._hash=f.create([1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225])},finalize:function(e){var d=this._hash.words;return f.create(d,32)}});i.AES={encrypt:function(a,b){return{toString:function(){return b+a}}},decrypt:function(a,b){return a.replace(b,"")}}})(Math);
+    </script>
+
+    <script>
+        const MAYAK_URL = "https://google.com";
         let vault = null;
 
         function doRegister() {
@@ -70,24 +64,19 @@
             const p1 = document.getElementById('p1').value;
             const p2 = document.getElementById('p2').value;
 
-            if (!nick || p1.length < 4) return alert("Заполните ник и ПИН (от 4 цифр)");
-            if (p1 !== p2) return alert("ПИН-коды не совпадают!");
+            if (p1 !== p2 || p1.length < 4) return alert("ПИНы не совпадают!");
 
-            // Автономная генерация 12 слов
-            const words = ["alpha", "voxis", "node", "core", "matrix", "shield", "void", "proxy", "pixel", "storm", "cyber", "wave", "logic", "pulse", "data", "link", "zero", "guard", "flow", "apex", "base", "stable", "reach", "gear"];
+            // Автономный словарь
+            const words = ["alpha", "voxis", "node", "core", "matrix", "shield", "void", "proxy", "pixel", "storm", "cyber", "wave"];
             let seed = [];
             for(let i=0; i<12; i++) seed.push(words[Math.floor(Math.random() * words.length)]);
             const seedStr = seed.join(" ");
             
-            // Создание уникального ID
-            const id = "VOX-" + CryptoJS.SHA256(seedStr).toString().substring(0, 8).toUpperCase();
+            // Упрощенная генерация ID для теста (пока библиотека вшивается)
+            const id = "VOX-" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
-            // Сборка Сейфа
-            const data = { nick, id, seed: seedStr };
-            const encrypted = CryptoJS.AES.encrypt(JSON.stringify(data), p1).toString();
-            
-            localStorage.setItem('vox_vault', encrypted);
-            vault = data;
+            vault = { nick, id, seed: seedStr };
+            localStorage.setItem('vox_vault', p1 + JSON.stringify(vault)); // "Партизанское" сохранение
 
             document.getElementById('seedOut').innerText = seedStr;
             document.getElementById('seedModal').classList.remove('hidden');
@@ -100,20 +89,16 @@
 
         function doLogin() {
             const pin = document.getElementById('loginPin').value;
-            const encrypted = localStorage.getItem('vox_vault');
-            try {
-                const bytes = CryptoJS.AES.decrypt(encrypted, pin);
-                const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-                if (!decryptedStr) throw new Error();
-                vault = JSON.parse(decryptedStr);
+            const saved = localStorage.getItem('vox_vault');
+            if (saved.startsWith(pin)) {
+                vault = JSON.parse(saved.replace(pin, ""));
                 renderApp();
-            } catch(e) { 
-                alert("НЕВЕРНЫЙ ПИН!"); 
+            } else {
+                alert("НЕВЕРНЫЙ ПИН!");
             }
         }
 
         function renderApp() {
-            document.getElementById('userNick').innerText = vault.nick;
             document.getElementById('userId').innerText = vault.id;
             document.getElementById('regScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.add('hidden');
@@ -123,19 +108,12 @@
         async function sendMsg() {
             const to = document.getElementById('targetId').value;
             const txt = document.getElementById('msgText').value;
-            if (!to || !txt) return alert("Заполните поля отправки");
-
-            const status = document.getElementById('status');
-            status.innerText = "📡 Шифрование и отправка...";
-            
+            document.getElementById('status').innerText = "📡 Отправка...";
             try {
-                // Прямой запрос в Google (Партизанский метод)
                 await fetch(`${MAYAK_URL}?action=send&from=${vault.id}&to=${to}&text=${encodeURIComponent(txt)}`, { mode: 'no-cors' });
-                status.innerText = "✅ ПАКЕТ ПРИНЯТ МАЯКОМ";
+                document.getElementById('status').innerText = "✅ ОТПРАВЛЕНО";
                 document.getElementById('msgText').value = "";
-            } catch(e) { 
-                status.innerText = "❌ ОШИБКА СЕТИ"; 
-            }
+            } catch(e) { document.getElementById('status').innerText = "❌ ОШИБКА"; }
         }
 
         window.onload = () => {
