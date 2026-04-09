@@ -17,6 +17,8 @@
         .chat-box { background: #05081a; border: 1px solid var(--accent); height: 180px; overflow-y: auto; margin: 10px 0; padding: 10px; text-align: left; font-size: 13px; border-radius: 8px; color: #fff; }
         .msg { border-bottom: 1px solid #1a1f3a; padding: 5px 0; margin-bottom: 5px; }
         .msg b { color: var(--accent); }
+        .delete-btn { background: #ff4444; color: #fff; margin-top: 20px; }
+        .delete-btn:hover { background: #cc0000; }
     </style>
 </head>
 <body>
@@ -52,15 +54,39 @@
         <input type="text" id="targetId" placeholder="Кому (ID получателя)">
         <textarea id="msgText" placeholder="Сообщение..." rows="2"></textarea>
         <button onclick="sendMsg()">ОТПРАВИТЬ</button>
+        
+        <button onclick="showDeleteModal()" class="delete-btn">🗑️ УДАЛИТЬ АККАУНТ</button>
         <div id="status" style="font-size:11px; margin-top:10px; color:var(--accent);"></div>
     </div>
 
-    <!-- МОДАЛКА SEED -->
+    <!-- МОДАЛКА SEED (показ) -->
     <div id="seedModal" class="modal hidden">
         <div class="card">
             <h3>⚠️ ЗАПИШИТЕ SEED!</h3>
             <div class="seed-box" id="seedOut"></div>
-            <button onclick="finishReg()">Я ЗАПИСАЛ</button>
+            <button onclick="startSeedCheck()">Я ЗАПИСАЛ</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ПРОВЕРКИ SEED -->
+    <div id="checkModal" class="modal hidden">
+        <div class="card">
+            <h3>🔐 ПРОВЕРКА SEED</h3>
+            <p id="checkPrompt"></p>
+            <input type="text" id="checkWord" placeholder="Введите слово">
+            <button onclick="checkWord()">ПРОВЕРИТЬ</button>
+            <div id="checkStatus" style="font-size:12px; margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА УДАЛЕНИЯ АККАУНТА -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="card">
+            <h3 style="color:#ff4444;">⚠️ УДАЛЕНИЕ АККАУНТА</h3>
+            <p>Введите ваш Seed (12 слов) для подтверждения</p>
+            <textarea id="deleteSeed" rows="3" placeholder="Введите 12 слов..."></textarea>
+            <button onclick="deleteAccount()" style="background:#ff4444; color:#fff;">ПОДТВЕРДИТЬ УДАЛЕНИЕ</button>
+            <button onclick="closeDeleteModal()" style="background:transparent; border:1px solid #555;">ОТМЕНА</button>
         </div>
     </div>
 
@@ -69,41 +95,109 @@
         const MAYAK_URL = "https://script.google.com/macros/s/AKfycby9k2zI09dtL2454FvvansiCKqZ3kY-UFnYdWEK8bKWYBNxFAu49O9uPlsMB8a3e-fi/exec";
         
         let vault = null;
+        let pendingSeed = null;
+        let checkWords = [];
+        let currentCheckIndex = 0;
+        let pendingDeleteSeed = null;
 
+        // ========== ГЕНЕРАЦИЯ SEED ==========
+        const WORDS = ["alpha", "voxis", "node", "core", "matrix", "shield", "void", "proxy", "pixel", "storm", "cyber", "wave", "logic", "pulse", "data", "link", "zero", "guard", "flow", "apex"];
+        
+        function generateSeed() {
+            let seed = [];
+            for(let i=0; i<12; i++) seed.push(WORDS[Math.floor(Math.random() * WORDS.length)]);
+            return seed.join(" ");
+        }
+
+        function generateIdFromSeed(seed) {
+            try { return "VOX-" + CryptoJS.SHA256(seed).toString().substring(0, 8).toUpperCase(); } 
+            catch(e) { return "VOX-TEMP"; }
+        }
+
+        // ========== РЕГИСТРАЦИЯ С ПРОВЕРКОЙ SEED ==========
         function doRegister() {
             const nick = document.getElementById('nick').value;
             const p1 = document.getElementById('p1').value;
             const p2 = document.getElementById('p2').value;
 
+            if (!nick) return alert("Введите никнейм!");
             if (p1 !== p2 || p1.length < 4) return alert("ПИНы не совпали или коротки!");
 
-            const words = ["alpha", "voxis", "node", "core", "matrix", "shield", "void", "proxy", "pixel", "storm", "cyber", "wave", "logic", "pulse", "data", "link", "zero", "guard", "flow", "apex"];
-            let seed = [];
-            for(let i=0; i<12; i++) seed.push(words[Math.floor(Math.random() * words.length)]);
-            const seedStr = seed.join(" ");
+            const seed = generateSeed();
+            const id = generateIdFromSeed(seed);
             
-            let id = "VOX-TEMP";
-            try { id = "VOX-" + CryptoJS.SHA256(seedStr).toString().substring(0, 8).toUpperCase(); } catch(e) {}
-
-            vault = { nick, id, seed: seedStr };
-            localStorage.setItem('vox_vault', p1 + JSON.stringify(vault));
-
-            document.getElementById('seedOut').innerText = seedStr;
+            pendingSeed = seed;
+            document.getElementById('seedOut').innerText = seed;
             document.getElementById('seedModal').classList.remove('hidden');
+            
+            window.tempNick = nick;
+            window.tempPin = p1;
+            window.tempId = id;
         }
 
-        function finishReg() {
+        function startSeedCheck() {
             document.getElementById('seedModal').classList.add('hidden');
-            renderApp();
+            
+            const words = pendingSeed.split(" ");
+            // Выбираем 3 случайных разных слова
+            const indices = [];
+            while(indices.length < 3) {
+                const r = Math.floor(Math.random() * 12);
+                if(!indices.includes(r)) indices.push(r);
+            }
+            indices.sort((a,b) => a-b);
+            checkWords = indices.map(i => ({ num: i+1, word: words[i] }));
+            currentCheckIndex = 0;
+            
+            showNextCheck();
+            document.getElementById('checkModal').classList.remove('hidden');
         }
 
+        function showNextCheck() {
+            if(currentCheckIndex >= checkWords.length) {
+                // Проверка пройдена
+                document.getElementById('checkModal').classList.add('hidden');
+                
+                vault = {
+                    nick: window.tempNick,
+                    id: window.tempId,
+                    seed: pendingSeed
+                };
+                localStorage.setItem('vox_vault', window.tempPin + JSON.stringify(vault));
+                
+                renderApp();
+                return;
+            }
+            
+            const check = checkWords[currentCheckIndex];
+            document.getElementById('checkPrompt').innerHTML = `Введите слово №${check.num}:`;
+            document.getElementById('checkWord').value = "";
+            document.getElementById('checkStatus').innerHTML = "";
+        }
+
+        function checkWord() {
+            const input = document.getElementById('checkWord').value.trim().toLowerCase();
+            const correct = checkWords[currentCheckIndex].word.toLowerCase();
+            
+            if(input === correct) {
+                document.getElementById('checkStatus').innerHTML = '<span style="color:#66ff66;">✅ Правильно!</span>';
+                currentCheckIndex++;
+                setTimeout(() => showNextCheck(), 800);
+            } else {
+                document.getElementById('checkStatus').innerHTML = `<span style="color:#ff6666;">❌ Неправильно! Правильное слово: "${correct}"</span>`;
+            }
+        }
+
+        // ========== ВХОД ==========
         function doLogin() {
             const pin = document.getElementById('loginPin').value;
             const saved = localStorage.getItem('vox_vault');
             if (saved && saved.startsWith(pin)) {
                 vault = JSON.parse(saved.replace(pin, ""));
                 renderApp();
-            } else { alert("НЕВЕРНЫЙ ПИН!"); }
+            } else { 
+                alert("НЕВЕРНЫЙ ПИН!"); 
+            }
         }
 
         function renderApp() {
@@ -114,35 +208,69 @@
             document.getElementById('app').classList.remove('hidden');
         }
 
+        // ========== ОТПРАВКА / ПОЛУЧЕНИЕ ==========
         async function sendMsg() {
             const to = document.getElementById('targetId').value;
             const txt = document.getElementById('msgText').value;
             if(!to || !txt) return alert("Заполните поля!");
             
-            document.getElementById('status').innerText = "📡 Отправка...";
+            document.getElementById('status').innerHTML = "📡 Отправка...";
             try {
                 await fetch(`${MAYAK_URL}?action=send&from=${vault.id}&to=${to}&text=${encodeURIComponent(txt)}`, { mode: 'no-cors' });
-                document.getElementById('status').innerText = "✅ ПАКЕТ ПРИНЯТ";
+                document.getElementById('status').innerHTML = "✅ ПАКЕТ ПРИНЯТ";
                 document.getElementById('msgText').value = "";
-            } catch(e) { document.getElementById('status').innerText = "❌ ОШИБКА"; }
+            } catch(e) { 
+                document.getElementById('status').innerHTML = "❌ ОШИБКА"; 
+            }
         }
 
         async function getMsgs() {
-            document.getElementById('status').innerText = "📡 Запрос к Маяку...";
+            document.getElementById('status').innerHTML = "📡 Запрос к Маяку...";
             try {
                 const res = await fetch(`${MAYAK_URL}?action=get&id=${vault.id}`);
                 const data = await res.json();
                 const box = document.getElementById('chatBox');
-                if (data.length > 0) {
+                if (data && data.length > 0) {
                     box.innerHTML = "";
                     data.forEach(m => {
                         box.innerHTML += `<div class="msg"><b>${m.from}:</b> ${m.text}</div>`;
                     });
-                    document.getElementById('status').innerText = "✅ ПОЛУЧЕНО: " + data.length;
+                    document.getElementById('status').innerHTML = "✅ ПОЛУЧЕНО: " + data.length;
                 } else {
-                    document.getElementById('status').innerText = "📭 Новых пакетов нет";
+                    document.getElementById('status').innerHTML = "📭 Новых пакетов нет";
                 }
-            } catch(e) { document.getElementById('status').innerText = "❌ ОШИБКА"; }
+            } catch(e) { 
+                document.getElementById('status').innerHTML = "❌ ОШИБКА"; 
+            }
+        }
+
+        // ========== УДАЛЕНИЕ АККАУНТА ==========
+        function showDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('hidden');
+            document.getElementById('deleteSeed').value = "";
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        function deleteAccount() {
+            const enteredSeed = document.getElementById('deleteSeed').value.trim();
+            if(!enteredSeed) {
+                alert("Введите Seed-фразу!");
+                return;
+            }
+            
+            if(enteredSeed === vault.seed) {
+                if(confirm("ВНИМАНИЕ! Это действие навсегда удалит ваш аккаунт. Продолжить?")) {
+                    localStorage.removeItem('vox_vault');
+                    alert("Аккаунт удалён.");
+                    location.reload();
+                }
+            } else {
+                alert("Неверный Seed! Удаление отменено.");
+                closeDeleteModal();
+            }
         }
 
         window.onload = () => {
