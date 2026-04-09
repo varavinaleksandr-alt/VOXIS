@@ -3,302 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VOXIS - Бессмертная связь</title>
+    <title>VOXIS - Stealth Messenger</title>
+    
+    <!-- Подключаем надежную библиотеку шифрования -->
+    <script src="https://cloudflare.com"></script>
+    
     <style>
-        :root { --accent: #00ffcc; }
-        * { box-sizing: border-box; }
-        body { background: #0a0e27; color: #e0e0e0; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .card { background: #11162e; border: 1px solid var(--accent); border-radius: 15px; padding: 20px; max-width: 450px; margin: auto; }
-        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--accent); background: #1a1f3a; color: var(--accent); font-weight: bold; font-family: monospace; }
-        button { background: var(--accent); color: #0a0e27; cursor: pointer; }
-        button:active { transform: scale(0.98); }
+        :root { --accent: #00ffcc; --bg: #0a0e27; --card: #11162e; --text: #e0e0e0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .card { background: var(--card); border: 1px solid var(--accent); border-radius: 15px; padding: 25px; max-width: 450px; margin: auto; box-shadow: 0 0 20px rgba(0,255,204,0.15); }
+        h1 { color: var(--accent); letter-spacing: 4px; margin-bottom: 30px; text-shadow: 0 0 10px var(--accent); }
+        input, textarea, button, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--accent); background: #1a1f3a; color: var(--accent); font-weight: bold; font-family: monospace; font-size: 16px; outline: none; }
+        button { background: var(--accent); color: #0a0e27; cursor: pointer; text-transform: uppercase; transition: 0.3s; border: none; }
+        button:hover { background: #00ccaa; box-shadow: 0 0 15px var(--accent); }
+        button:active { transform: scale(0.95); }
         .hidden { display: none !important; }
-        .seed-box { background: #fff !important; color: #000 !important; padding: 15px; border-radius: 8px; font-family: monospace; font-weight: bold; margin: 15px 0; border: 2px solid var(--accent); word-break: break-all; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .small { font-size: 12px; color: #888; }
-        .messages-container { height: 300px; overflow-y: auto; margin: 10px 0; border: 1px solid var(--accent); border-radius: 8px; padding: 5px; background: #0a0e27; }
-        .message { border-bottom: 1px solid #2a2f4a; padding: 8px; text-align: left; }
-        .flex-row { display: flex; gap: 8px; }
+        
+        /* Тот самый контрастный блок для Seed */
+        .seed-box { background: #ffffff !important; color: #000000 !important; padding: 20px; border-radius: 10px; font-family: monospace; font-weight: bold; font-size: 18px; margin: 20px 0; border: 4px solid var(--accent); word-break: break-all; box-shadow: 0 0 20px #fff; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .messages-container { height: 320px; overflow-y: auto; margin: 15px 0; border: 1px solid var(--accent); border-radius: 8px; padding: 10px; background: #05081a; text-align: left; }
+        .message { border-bottom: 1px solid #1a1f3a; padding: 10px 0; font-size: 14px; }
+        .small { font-size: 11px; color: #666; }
+        .status { font-size: 12px; margin: 10px 0; min-height: 1.5em; }
+        .flex-row { display: flex; gap: 10px; }
         .flex-row input { flex: 1; }
-        .flex-row button { width: auto; padding: 12px 16px; }
-        .status { font-size: 12px; padding: 5px; margin: 5px 0; }
-        .error { color: #ff6666; }
-        .success { color: #66ff66; }
+        .flex-row button { width: 60px; }
     </style>
-    <!-- Вшитая CryptoJS (только AES + SHA256, компактная) -->
+</head>
+<body>
     <script>
-/* CryptoJS v4.1.1 Core + AES + SHA256 (Compact for VOXIS) - вшит для автономности */
-var CryptoJS=CryptoJS||function(h,s){var f={},t=f.lib={},g=t.Base={extend:function(a){var b=this.create();a&&b.mixIn(a);b.init.prototype=b;b.$super=this;return b},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var b in a)a.hasOwnProperty(b)&&(this[b]=a[b]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}},p=t.WordArray=g.extend({init:function(a,b){a=this.words=a||[];this.sigBytes=null!=b?b:4*a.length},toString:function(a){return(a||v).stringify(this)},concat:function(a){var b=this.words,d=a.words,c=this.sigBytes;a=a.sigBytes;this.clamp();if(c%4)for(var e=0;e<a;e++)b[c+e>>>2]|=(d[e>>>2]>>>24-e%4*8&255)<<24-(c+e)%4*8;else for(e=0;e<a;e+=4)b[c+e>>>2]=d[e>>>2];this.sigBytes+=a;return this},clamp:function(){var a=this.words,b=this.sigBytes;a[b>>>2]&=4294967295<<32-b%4*8;a.length=h.ceil(b/4)},clone:function(){var a=g.clone.call(this);a.words=this.words.slice(0);return a},random:function(a){for(var b=[],d=0;d<a;d+=4)b.push(4294967296*h.random()|0);return new p.init(b,a)}}),i=f.enc={},v=i.Hex={stringify:function(a){var b=a.words;a=a.sigBytes;for(var d=[],c=0;c<a;c++){var e=b[c>>>2]>>>24-c%4*8&255;d.push((e>>>4).toString(16));d.push((15&e).toString(16))}return d.join("")},parse:function(a){for(var b=a.length,d=[],c=0;c<b;c+=2)d[c>>>3]|=parseInt(a.substr(c,2),16)<<24-c%8*4;return new p.init(d,b/2)}},w=i.Latin1={stringify:function(a){var b=a.words;a=a.sigBytes;for(var d=[],c=0;c<a;c++)d.push(String.fromCharCode(b[c>>>2]>>>24-c%4*8&255));return d.join("")},parse:function(a){for(var b=a.length,d=[],c=0;c<b;c++)d[c>>>2]|=(255&a.charCodeAt(c))<<24-c%4*8;return new p.init(d,b)}},x=i.Utf8={stringify:function(a){try{return decodeURIComponent(escape(w.stringify(a)))}catch(b){throw Error("Malformed UTF-8 data")}},parse:function(a){return w.parse(unescape(encodeURIComponent(a)))}},q=t.BufferedBlockAlgorithm=g.extend({reset:function(){this._data=new p.init;this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=x.parse(a));this._data.concat(a);this._nDataBytes+=a.sigBytes},_process:function(a){var b=this._data,d=b.words,c=b.sigBytes,e=this.blockSize,f=c/(4*e),f=a?h.ceil(f):h.max((0|f)-this._minBufferSize,0);a=f*e;c=h.min(4*a,c);if(a){for(var g=0;g<a;g+=e)this._doProcessBlock(d,g);g=d.splice(0,a);b.sigBytes-=c}return new p.init(g,c)},clone:function(){var a=g.clone.call(this);a._data=this._data.clone();return a},_minBufferSize:0}),r=t.Hasher=q.extend({init:function(a){this.reset();this.mixIn(a)},reset:function(){q.reset.call(this);this._doReset()},update:function(a){this._append(a);this._process();return this},finalize:function(a){a&&this._append(a);return this._doFinalize()},blockSize:16,_createHelper:function(a){return function(b,d){return(new a.init(d)).finalize(b)}},_createHmacHelper:function(a){return function(b,d){return(new u.HMAC.init(a,d)).finalize(b)}}}),u=f.algo={};return f}(Math);
-(function(h){var s=CryptoJS,f=s.lib,t=f.WordArray,g=f.Hasher,p=s.algo,i=[],v=[];(function(){function f(a){for(var b=h.sqrt(a),d=2;d<=b;d++)if(!(a%d))return!1;return!0}function g(a){return 4294967296*(a-(0|a))|0}for(var p=2,s=0;8>s;)f(p)&&(i[s]=g(h.pow(p,0.5)),v[s]=g(h.pow(p,1/3)),s++),p++})();var w=[],p=p.SHA256=g.extend({_doReset:function(){this._hash=new t.init(i.slice(0))},_doProcessBlock:function(f,g){for(var i=this._hash.words,p=i[0],s=i[1],t=i[2],h=i[3],u=i[4],k=i[5],l=i[6],m=i[7],n=0;64>n;n++){if(16>n)w[n]=f[g+n];else{var a=w[n-15],b=w[n-2];w[n]=((a>>>7|a<<25)^(a>>>18|a<<14)^a>>>3)+w[n-7]+((b>>>17|b<<15)^(b>>>19|b<<13)^b>>>10)+w[n-16]}a=m+((u>>>6|u<<26)^(u>>>11|u<<21)^(u>>>25|u<<7))+(u&k^~u&l)+v[n]+w[n];b=((p>>>2|p<<30)^(p>>>13|p<<19)^(p>>>22|p<<10))+(p&s^p&t^s&t);m=l;l=k;k=u;u=h+a|0;h=t;t=s;s=p;p=a+b|0}i[0]=i[0]+p|0;i[1]=i[1]+s|0;i[2]=i[2]+t|0;i[3]=i[3]+h|0;i[4]=i[4]+u|0;i[5]=i[5]+k|0;i[6]=i[6]+l|0;i[7]=i[7]+m|0},_doFinalize:function(){var f=this._data,g=f.words,i=8*this._nDataBytes,p=8*f.sigBytes;g[p>>>5]|=128<<24-p%32;g[(p+64>>>9<<4)+14]=h.floor(i/4294967296);g[(p+64>>>9<<4)+15]=i;f.sigBytes=4*g.length;this._process();for(f=0;8>f;f++)this._hash.words[f]=this._hash.words[f]>>>0;return this._hash},clone:function(){var f=g.clone.call(this);f._hash=this._hash.clone();return f}});s.SHA256=g._createHelper(p);s.HmacSHA256=g._createHmacHelper(p);s.AES={encrypt:function(r,o){return{toString:function(){return"encrypted"+Math.random()}}},decrypt:function(r,o){return"decrypted"+Math.random()}}})(Math);
-</script>
-
-    <script>
-        // ========== ВСТРОЕННЫЙ СЛОВАРЬ (BIP39-совместимый) ==========
-        const WORDS = ["abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse","access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act","action","actor","actress","actual","adapt","add","addict","address","adjust","admit","adult","advance","advice","aerobic","affair","afford","afraid","africa","after","again","age","agent","agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert","alien","all","alley","allow","almost","alone","alpha","already","also","alter","always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger","angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique","anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic","area"];
-        
-        // Генерация случайной соли (Salt) для ПИН-кода
-        function generateSalt() { return CryptoJS.lib.WordArray.random(16).toString(); }
-        
-        function generateMnemonic() { let w=[]; for(let i=0;i<12;i++) w.push(WORDS[Math.floor(Math.random()*WORDS.length)]); return w.join(' '); }
-        function generateIdFromSeed(seed) { return CryptoJS.SHA256(seed).toString(CryptoJS.enc.Hex).substr(0,16).toUpperCase(); }
-        function encryptSeedWithPin(seed,pin,salt) { return CryptoJS.AES.encrypt(seed, pin+salt).toString(); }
-        function decryptSeedWithPin(encrypted,pin,salt) { try{ return CryptoJS.AES.decrypt(encrypted, pin+salt).toString(CryptoJS.enc.Utf8); }catch(e){ return null; } }
-        
-        // ========== РОТАЦИЯ МАЯКОВ (массив + цикл) ==========
-        const МАЯКИ = [
-            'https://script.google.com/macros/s/AKfycbwLIQfO9dXRXt4sNkBWv8PXpAYQ5LX_0UuBVXBdkS_u4Ak3lj1sBLXdnT26pMK8oyxJ/exec',
-            'https://script.google.com/macros/s/ЗАПАСНОЙ_ID_1/exec',
-            'https://script.google.com/macros/s/ЗАПАСНОЙ_ID_2/exec'
+        // ========== НАСТРОЙКИ И МАЯКИ ==========
+        const MAYAK_LIST = [
+            'https://google.com',
+            'https://google.com'
         ];
         
-        async function sendToMayak(от, кому, текст) {
-            for(let i=0; i<МАЯКИ.length; i++) {
-                const url = `${МАЯКИ[i]}?from=${encodeURIComponent(от)}&to=${encodeURIComponent(кому)}&text=${encodeURIComponent(текст)}&action=send`;
+        const WORDS = ["alpha","voxis","node","core","matrix","shield","void","proxy","pixel","storm","cyber","wave","logic","pulse","data","link","zero","guard","flow","apex","base","stable","reach","gear","alpha","beta","gamma","delta","omega","sigma","zeta","theta"];
+
+        let currentUser = null;
+        let currentContact = null;
+
+        // ========== КРИПТОГРАФИЯ ==========
+        function generateMnemonic() {
+            let w = [];
+            for(let i=0; i<12; i++) w.push(WORDS[Math.floor(Math.random()*WORDS.length)]);
+            return w.join(' ');
+        }
+
+        function generateId(seed) {
+            return "VOX-" + CryptoJS.SHA256(seed).toString().substring(0, 8).toUpperCase();
+        }
+
+        function encrypt(data, pin, salt) {
+            return CryptoJS.AES.encrypt(data, pin + salt).toString();
+        }
+
+        function decrypt(cipher, pin, salt) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(cipher, pin + salt);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            } catch(e) { return null; }
+        }
+
+        // ========== СЕТЕВАЯ РОТАЦИЯ (Бессмертная связь) ==========
+        async function fetchMayak(params) {
+            const query = new URLSearchParams(params).toString();
+            for (let url of MAYAK_LIST) {
                 try {
-                    await fetch(url, { mode: 'no-cors' });
+                    // Используем GET + no-cors для обхода блокировок
+                    await fetch(`${url}?${query}`, { mode: 'no-cors' });
                     return true;
-                } catch(e) { continue; }
+                } catch (e) {
+                    console.warn("Маяк недоступен, пробую следующий...");
+                }
             }
             return false;
         }
-        
-        function getFromMayak(пользовательId) {
-            return new Promise((resolve) => {
-                const url = `${МАЯКИ[0]}?команда=получить&пользователь=${encodeURIComponent(пользовательId)}&action=get`;
-                fetch(url, { mode: 'no-cors' }).then(() => resolve([])).catch(() => resolve([]));
-            });
+
+        // ========== ЛОГИКА ИНТЕРФЕЙСА ==========
+        function showScreen(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
         }
-        
-        // ========== УПРАВЛЕНИЕ ==========
-        let currentUser = null, currentContact = null;
-        
-        function showScreen(s) { ['mainScreen','registerScreen','restoreScreen','pinScreen','app'].forEach(id=>document.getElementById(id).classList.add('hidden')); document.getElementById(s).classList.remove('hidden'); }
-        function backToMain() { showScreen('mainScreen'); }
-        function showRegister() { showScreen('registerScreen'); }
-        function showRestore() { showScreen('restoreScreen'); }
-        function showPinScreen() { showScreen('pinScreen'); }
-        
-        function logout() { localStorage.removeItem('voxis_vault'); currentUser=null; showScreen('mainScreen'); }
-        
-        function checkSavedUser() {
-            const vault = localStorage.getItem('voxis_vault');
-            if(vault) showPinScreen();
-            else showScreen('mainScreen');
-        }
-        
-        async function register() {
+
+        function register() {
             const nick = document.getElementById('regNickname').value.trim();
-            const pin = document.getElementById('regPin').value;
-            const pin2 = document.getElementById('regPinConfirm').value;
-            if(!nick) return alert("Введите никнейм");
-            if(!pin || !/^\d{4,8}$/.test(pin)) return alert("ПИН 4-8 цифр");
-            if(pin!==pin2) return alert("ПИН не совпадают");
-            
-            const salt = generateSalt();
+            const p1 = document.getElementById('regPin').value;
+            const p2 = document.getElementById('regPinConfirm').value;
+
+            if(!nick || p1.length < 4) return alert("Заполните ник и ПИН (мин. 4 цифры)");
+            if(p1 !== p2) return alert("ПИН-коды не совпадают!");
+
             const seed = generateMnemonic();
-            const id = generateIdFromSeed(seed);
-            const encrypted = encryptSeedWithPin(seed, pin, salt);
-            const vault = { id, nickname: nick, encryptedSeed: encrypted, salt: salt, balance:100, contacts:[], messages:[], failedAttempts:0, lockUntil:0 };
-            localStorage.setItem('voxis_vault', JSON.stringify(vault));
-            document.getElementById('seedOut').innerText = seed;
-            document.getElementById('seedModal').classList.remove('hidden');
-            currentUser = vault;
-        }
-        
-        function closeModal() {
-            document.getElementById('seedModal').classList.add('hidden');
-            document.getElementById('regScreen').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
-            document.getElementById('userNickname').innerText = currentUser.nickname;
-            document.getElementById('userId').innerText = currentUser.id;
-            document.getElementById('balance').innerText = currentUser.balance;
-            loadContacts();
-        }
-        
-        async function loginWithPin() {
-            const pin = document.getElementById('pinInput').value;
-            const data = localStorage.getItem('voxis_vault');
-            if(!data) return alert("Нет аккаунта");
-            const vault = JSON.parse(data);
-            if(vault.lockUntil && vault.lockUntil > Date.now()) return alert(`Блокировка на ${Math.ceil((vault.lockUntil-Date.now())/1000)} сек`);
+            const id = generateId(seed);
+            const salt = CryptoJS.lib.WordArray.random(128/8).toString();
             
-            const seed = decryptSeedWithPin(vault.encryptedSeed, pin, vault.salt);
-            if(!seed) {
-                vault.failedAttempts = (vault.failedAttempts||0)+1;
-                if(vault.failedAttempts >= 5) vault.lockUntil = Date.now() + 30000;
-                if(vault.failedAttempts >= 10) { localStorage.removeItem('voxis_vault'); return alert("Хранилище очищено. Перерегистрируйтесь."); }
-                localStorage.setItem('voxis_vault', JSON.stringify(vault));
-                return alert(`Неверный ПИН. Попыток: ${vault.failedAttempts}`);
-            }
-            vault.failedAttempts = 0;
-            vault.lockUntil = 0;
+            const vault = {
+                id: id,
+                nickname: nick,
+                salt: salt,
+                vault: encrypt(seed, p1, salt),
+                balance: 100,
+                contacts: [],
+                messages: [],
+                fails: 0
+            };
+
             localStorage.setItem('voxis_vault', JSON.stringify(vault));
             currentUser = vault;
-            document.getElementById('userNickname').innerText = currentUser.nickname;
+
+            document.getElementById('seedOut').innerText = seed;
+            showScreen('seedModal');
+        }
+        function login() {
+            const pin = document.getElementById('loginPin').value;
+            const data = localStorage.getItem('voxis_vault');
+            if(!data) return alert("Аккаунт не найден");
+            
+            const vault = JSON.parse(data);
+            if(vault.lock && vault.lock > Date.now()) return alert("Сейф заблокирован. Подождите.");
+
+            const seed = decrypt(vault.vault, pin, vault.salt);
+            if(!seed) {
+                vault.fails = (vault.fails || 0) + 1;
+                if(vault.fails >= 5) vault.lock = Date.now() + 60000; // Блок на минуту
+                if(vault.fails >= 10) { 
+                    localStorage.removeItem('voxis_vault'); 
+                    return alert("СЕЙФ УНИЧТОЖЕН ПОСЛЕ 10 ОШИБОК!"); 
+                }
+                localStorage.setItem('voxis_vault', JSON.stringify(vault));
+                return alert("Неверный ПИН! Осталось попыток: " + (10 - vault.fails));
+            }
+
+            vault.fails = 0;
+            localStorage.setItem('voxis_vault', JSON.stringify(vault));
+            currentUser = vault;
+            startApp();
+        }
+
+        function startApp() {
+            document.getElementById('userNick').innerText = currentUser.nickname;
             document.getElementById('userId').innerText = currentUser.id;
             document.getElementById('balance').innerText = currentUser.balance;
-            loadContacts();
             showScreen('app');
         }
-        
-        async function restore() {
-            const seed = document.getElementById('restoreSeed').value.trim();
-            const nick = document.getElementById('restoreNick').value.trim();
-            const pin = document.getElementById('restorePin').value;
-            if(!seed || seed.split(/\s+/).length!==12) return alert("12 слов");
-            if(!nick) return alert("Никнейм");
-            if(!pin || !/^\d{4,8}$/.test(pin)) return alert("ПИН 4-8 цифр");
+
+        async function send() {
+            const to = document.getElementById('targetId').value;
+            const msg = document.getElementById('msgText').value;
+            if(!to || !msg) return alert("Заполните поля");
+
+            document.getElementById('status').innerText = "📡 Пакет в очереди...";
+            const ok = await fetchMayak({ action: 'send', from: currentUser.id, to: to, text: msg });
             
-            const id = generateIdFromSeed(seed);
-            const salt = generateSalt();
-            const encrypted = encryptSeedWithPin(seed, pin, salt);
-            const vault = { id, nickname: nick, encryptedSeed: encrypted, salt: salt, balance:100, contacts:[], messages:[], failedAttempts:0, lockUntil:0 };
-            localStorage.setItem('voxis_vault', JSON.stringify(vault));
-            alert("Аккаунт восстановлен!");
-            backToMain();
-            checkSavedUser();
-        }
-        
-        function loadContacts() {
-            const sel = document.getElementById('contacts');
-            sel.innerHTML = '<option>Выберите контакт</option>';
-            if(currentUser && currentUser.contacts) currentUser.contacts.forEach(c => { let o=document.createElement('option'); o.value=c.id; o.text=c.name||c.id; sel.appendChild(o); });
-        }
-        
-        function addContact() {
-            const id = document.getElementById('contactId').value.trim();
-            if(!id) return alert("Введите ID");
-            if(id===currentUser.id) return alert("Себя нельзя");
-            if(!currentUser.contacts) currentUser.contacts=[];
-            if(currentUser.contacts.find(c=>c.id===id)) return alert("Уже есть");
-            currentUser.contacts.push({ id, name:id });
-            localStorage.setItem('voxis_vault', JSON.stringify(currentUser));
-            loadContacts();
-            document.getElementById('contactId').value='';
-            alert("Контакт добавлен");
-        }
-        
-        function loadChat() {
-            const sel = document.getElementById('contacts');
-            const id = sel.value;
-            if(!id || id==='Выберите контакт') return;
-            currentContact = id;
-            document.getElementById('chatArea').style.display='block';
-            refreshMessages();
-        }
-        
-        function refreshMessages() {
-            const div = document.getElementById('messages');
-            div.innerHTML='';
-            if(!currentUser.messages) currentUser.messages=[];
-            const msgs = currentUser.messages.filter(m => (m.from===currentUser.id && m.to===currentContact) || (m.from===currentContact && m.to===currentUser.id));
-            msgs.forEach(m => { let d=document.createElement('div'); d.className='message'; d.innerHTML=`<strong>${m.from===currentUser.id?'Я':m.from}:</strong> ${m.text}<br><span class="small">${new Date(m.date).toLocaleTimeString()}</span>`; div.appendChild(d); });
-            div.scrollTop=div.scrollHeight;
-        }
-        
-        async function sendMessage() {
-            const text = document.getElementById('message').value.trim();
-            if(!text || !currentContact) return;
-            const msg = { from:currentUser.id, to:currentContact, text, date:new Date().toISOString() };
-            if(!currentUser.messages) currentUser.messages=[];
-            currentUser.messages.push(msg);
-            localStorage.setItem('voxis_vault', JSON.stringify(currentUser));
-            await sendToMayak(currentUser.id, currentContact, text);
-            document.getElementById('message').value='';
-            refreshMessages();
-            document.getElementById('status').innerHTML='<span class="success">✅ Отправлено</span>';
-            setTimeout(()=>document.getElementById('status').innerHTML='',2000);
-        }
-        
-        async function sync() {
-            if(!currentUser) return;
-            document.getElementById('status').innerHTML='🔄 Синхронизация...';
-            const msgs = await getFromMayak(currentUser.id);
-            if(msgs && msgs.length) {
-                if(!currentUser.messages) currentUser.messages=[];
-                msgs.forEach(m => { currentUser.messages.push({ from:m.от, to:currentUser.id, text:m.текст, date:m.время, fromMayak:true }); });
+            if(ok) {
+                currentUser.messages.push({ from: 'Я', to: to, text: msg, date: new Date().toISOString() });
                 localStorage.setItem('voxis_vault', JSON.stringify(currentUser));
-                refreshMessages();
-                document.getElementById('status').innerHTML=`<span class="success">✅ Получено ${msgs.length}</span>`;
-            } else document.getElementById('status').innerHTML='<span class="small">📭 Новых нет</span>';
-            setTimeout(()=>document.getElementById('status').innerHTML='',3000);
+                document.getElementById('msgText').value = "";
+                document.getElementById('status').innerText = "✅ Пакет принят Маяком";
+            }
         }
-        
-        async function transfer() {
-            if(!currentContact) return alert("Выберите контакт");
-            const amt = prompt("Сумма перевода (Credits):");
-            if(!amt || isNaN(amt)) return;
-            if(currentUser.balance < parseInt(amt)) return alert("Недостаточно");
-            currentUser.balance -= parseInt(amt);
-            localStorage.setItem('voxis_vault', JSON.stringify(currentUser));
-            document.getElementById('balance').innerText = currentUser.balance;
-            await sendToMayak(currentUser.id, currentContact, `💰 ПЕРЕВОД: ${amt} Credits`);
-            alert(`Переведено ${amt} Credits`);
-            refreshMessages();
+
+        function closeModal() {
+            document.getElementById('seedModal').classList.add('hidden');
+            startApp();
         }
-        
-        checkSavedUser();
+
+        window.onload = () => {
+            if(localStorage.getItem('voxis_vault')) showScreen('loginScreen');
+        };
     </script>
-    
-    <!-- HTML элементы -->
-    <div id="mainScreen" class="card">
+
+    <!-- HTML РАЗМЕТКА -->
+    <div class="card" id="mainScreen">
         <h1>VOXIS</h1>
-        <button onclick="showRegister()">Регистрация</button>
-        <button onclick="showRestore()">Вход по Seed</button>
+        <button onclick="showScreen('registerScreen')">Создать Сейф</button>
     </div>
 
-    <div id="registerScreen" class="card hidden">
-        <h2>Регистрация</h2>
-        <input type="text" id="regNickname" placeholder="Никнейм">
+    <div class="card hidden" id="registerScreen">
+        <h3>Регистрация</h3>
+        <input type="text" id="regNickname" placeholder="Ваш Никнейм">
         <input type="password" id="regPin" placeholder="ПИН (4-8 цифр)">
         <input type="password" id="regPinConfirm" placeholder="Повторите ПИН">
-        <button onclick="register()">Создать Сейф</button>
-        <button class="small" onclick="backToMain()">Назад</button>
+        <button onclick="register()">Генерировать Ключи</button>
     </div>
 
-    <div id="restoreScreen" class="card hidden">
-        <h2>Восстановление</h2>
-        <textarea id="restoreSeed" rows="3" placeholder="Введите 12 слов"></textarea>
-        <input type="text" id="restoreNick" placeholder="Никнейм">
-        <input type="password" id="restorePin" placeholder="Новый ПИН">
-        <button onclick="restore()">Восстановить</button>
-        <button class="small" onclick="backToMain()">Назад</button>
+    <div class="card hidden" id="loginScreen">
+        <h3>Вход в Сейф</h3>
+        <input type="password" id="loginPin" placeholder="Введите ПИН">
+        <button onclick="login()">Открыть</button>
     </div>
 
-    <div id="pinScreen" class="card hidden">
-        <h2>Вход</h2>
-        <input type="password" id="pinInput" placeholder="ПИН">
-        <button onclick="loginWithPin()">Войти</button>
-        <button class="small" onclick="backToMain()">Назад</button>
-    </div>
-
-    <div id="app" class="card hidden">
-        <div>👤 <span id="userNickname"></span> | 🆔 <span id="userId"></span> | 💰 <span id="balance">0</span></div>
-        <div class="flex-row" style="margin-top:15px">
-            <input type="text" id="contactId" placeholder="ID контакта">
-            <button onclick="addContact()">+</button>
+    <div class="card hidden" id="app">
+        <div style="text-align:left; font-size:14px; margin-bottom:15px;">
+            👤 <span id="userNick"></span> | <span id="userId" style="color:var(--accent)"></span><br>
+            💰 Баланс: <span id="balance"></span> VOX
         </div>
-        <select id="contacts" onchange="loadChat()" style="width:100%"><option>Выберите контакт</option></select>
-        <div id="chatArea" class="hidden">
-            <div class="messages-container" id="messages"></div>
-            <div class="flex-row">
-                <input type="text" id="message" placeholder="Сообщение">
-                <button onclick="sendMessage()">📤</button>
-            </div>
-            <div class="flex-row">
-                <button onclick="sync()">Синхрон</button>
-                <button onclick="transfer()">Перевести</button>
-            </div>
-        </div>
-        <button class="small" onclick="logout()" style="margin-top:15px">Выйти</button>
+        <input type="text" id="targetId" placeholder="Кому (ID)">
+        <textarea id="msgText" placeholder="Сообщение..." rows="3"></textarea>
+        <button onclick="send()">Отправить пакет</button>
         <div id="status" class="status"></div>
     </div>
 
     <div id="seedModal" class="modal hidden">
         <div class="card">
-            <h3 style="color:var(--accent)">⚠️ ЗАПИШИТЕ SEED!</h3>
+            <h3 style="color:var(--accent)">⚠️ ВНИМАНИЕ! ЗАПИШИТЕ SEED!</h3>
             <div id="seedOut" class="seed-box"></div>
-            <div class="small">Без этих 12 слов вы потеряете доступ навсегда</div>
             <button onclick="closeModal()">Я ЗАПИСАЛ</button>
         </div>
     </div>
