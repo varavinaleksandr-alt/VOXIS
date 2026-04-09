@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOXIS - Stealth Messenger</title>
+    <!-- Библиотека шифрования -->
+    <script src="https://cloudflare.com"></script>
+    <style>
+        :root { --bg: #0a0e27; --card: #11162e; --accent: #00ffcc; --text: #e0e0e0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 450px; background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid #1a1f3a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: var(--accent); text-align: center; letter-spacing: 5px; margin-bottom: 30px; }
+        input, textarea, button { width: 100%; background: #1a1f3a; color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 12px; margin: 8px 0; box-sizing: border-box; font-size: 16px; }
+        button { background: var(--accent); color: var(--bg); font-weight: bold; cursor: pointer; transition: 0.3s; border: none; }
+        button:active { transform: scale(0.98); opacity: 0.8; }
+        .hidden { display: none; }
+        .status { font-size: 11px; text-align: center; color: var(--accent); opacity: 0.6; margin-bottom: 10px; }
+        .seed-text { background: #000; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; border: 1px solid var(--accent); word-break: break-all; margin: 15px 0; color: #fff; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .balance-info { background: #1a1f3a; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VOXIS</h1>
+        <div id="status" class="status">● СИСТЕМА АКТИВНА</div>
+
+        <!-- ГЛАВНЫЙ ЭКРАН -->
+        <div id="mainScreen">
+            <button onclick="showScreen('registerScreen')">СОЗДАТЬ АККАУНТ</button>
+            <button style="background: transparent; color: var(--accent); border: 1px solid var(--accent);" onclick="showScreen('loginScreen')">ВХОД ПО ПИН</button>
+        </div>
+
+        <!-- РЕГИСТРАЦИЯ -->
+        <div id="registerScreen" class="hidden">
+            <input type="text" id="regNickname" placeholder="Никнейм">
+            <input type="password" id="regPin" placeholder="Придумайте ПИН (4-8 цифр)">
+            <input type="password" id="regPinConfirm" placeholder="Повторите ПИН">
+            <button onclick="doRegister()">СГЕНЕРИРОВАТЬ СЕЙФ</button>
+            <button style="border:none; background:none; color:#555;" onclick="showScreen('mainScreen')">НАЗАД</button>
+        </div>
+
+        <!-- ВХОД -->
+        <div id="loginScreen" class="hidden">
+            <input type="password" id="loginPin" placeholder="Введите ПИН">
+            <button onclick="doLogin()">ВОЙТИ В СЕЙФ</button>
+        </div>
+
+        <!-- ИНТЕРФЕЙС -->
+        <div id="app" class="hidden">
+            <div class="balance-info">
+                <div>👤 <span id="userNick">User</span></div>
+                <div style="font-size: 10px; color: #666;">ID: <span id="userIdDisplay">---</span></div>
+                <div style="font-size: 18px; margin-top: 10px;">💰 <span id="userBalance">100.00</span> VOX</div>
+            </div>
+            <input type="text" id="targetId" placeholder="ID получателя">
+            <textarea id="msgText" placeholder="Сообщение..." rows="3"></textarea>
+            <button onclick="sendToMayak()">ОТПРАВИТЬ ПАКЕТ</button>
+            <div id="log" style="font-size: 12px; color: #555; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА SEED -->
+    <div id="seedModal" class="modal hidden">
+        <div style="background: var(--card); padding: 30px; border-radius: 15px; width: 80%; border: 1px solid var(--accent);">
+            <h3 style="color: var(--accent); margin-top: 0;">⚠️ ЗАПИШИТЕ SEED!</h3>
+            <div id="modalSeed" class="seed-text"></div>
+            <button onclick="finishRegistration()">Я ЗАПИСАЛ</button>
+        </div>
+    </div>
+
+    <script>
+        // ТВОЯ ССЫЛКА НА МАЯК
+        const МАЯК_URL = "https://google.com";
+
+        function showScreen(id) {
+            ['mainScreen', 'registerScreen', 'loginScreen', 'app'].forEach(s => document.getElementById(s).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+       async function doRegister() {
+    const nick = document.getElementById('regNickname').value;
+    const pin = document.getElementById('regPin').value;
+    const pinConfirm = document.getElementById('regPinConfirm').value;
+
+    if (!nick || !pin) return alert("Заполните все поля");
+    if (pin !== pinConfirm) return alert("ПИН-коды не совпадают!");
+    if (pin.length < 4) return alert("ПИН должен быть от 4 цифр");
+
+    // 1. Генерируем Seed
+    const seed = "voxis core " + Math.random().toString(36).substring(2, 10) + " " + Math.random().toString(36).substring(2, 10);
+    const userId = "VOX-" + CryptoJS.SHA256(seed).toString().substring(0, 8).toUpperCase();
+
+    // 2. ВАЖНО: Сначала принудительно вставляем текст в модалку
+    const seedDisplay = document.getElementById('modalSeed');
+    seedDisplay.innerHTML = "<strong>" + seed + "</strong>"; 
+    
+    // 3. Сохраняем в зашифрованный сейф
+    const vault = { nick, seed, userId, balance: 100.00 };
+    const encrypted = CryptoJS.AES.encrypt(JSON.stringify(vault), pin).toString();
+    localStorage.setItem('voxis_vault', encrypted);
+    localStorage.setItem('voxis_id', userId);
+
+    // 4. Показываем модалку (убираем класс hidden)
+    document.getElementById('seedModal').classList.remove('hidden');
+    
+    // 5. Обновляем данные в основном интерфейсе
+    document.getElementById('userNick').innerText = nick;
+    document.getElementById('userIdDisplay').innerText = userId;
+}
+
+
+        function finishRegistration() {
+            document.getElementById('seedModal').classList.add('hidden');
+            showScreen('app');
+        }
+
+        function doLogin() {
+            const pin = document.getElementById('loginPin').value;
+            const encrypted = localStorage.getItem('voxis_vault');
+            try {
+                const bytes = CryptoJS.AES.decrypt(encrypted, pin);
+                const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+                document.getElementById('userNick').innerText = data.nick;
+                document.getElementById('userIdDisplay').innerText = data.userId;
+                showScreen('app');
+            } catch (e) { alert("НЕВЕРНЫЙ ПИН"); }
+        }
+
+        async function sendToMayak() {
+            const to = document.getElementById('targetId').value;
+            const msg = document.getElementById('msgText').value;
+            const from = document.getElementById('userIdDisplay').innerText;
+            const log = document.getElementById('log');
+            log.innerText = "> Синхронизация...";
+            try {
+                await fetch(`${МАЯК_URL}?action=send&token=${to}&message=${from}: ${msg}`, { mode: 'no-cors' });
+                log.innerText = "> ПАКЕТ ОТПРАВЛЕН.";
+                document.getElementById('msgText').value = "";
+            } catch (e) { log.innerText = "> ОШИБКА."; }
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('voxis_vault')) showScreen('loginScreen');
+        };
+    </script>
+</body>
+</html>
